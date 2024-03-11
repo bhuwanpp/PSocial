@@ -6,22 +6,34 @@ import { useLocalStore } from "../store/hookStore";
 export default function Page() {
   const [posts, setPosts] = useState<any>("");
   const { localStorePost, setLocalStorePost } = useLocalStore();
-
-  const [comments, setComments] = useState<any>("");
-  const [storeComments, setStoreComments] = useState<any[]>([]);
-  const [showComments, setShowComments] = useState(false);
-
   const [like, setLikes] = useState<any>({});
-
   const [user, showUser] = useState(false);
 
+  const [file, setFile] = useState<any>();
+  const [fileLocal, setFileLocal] = useState<any>([]);
+  const [imageShow, setImageShow] = useState<any>(true);
+  const handleFile = (e: any) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFile(reader.result);
+      };
+      reader.readAsDataURL(file);
+      setImageShow(true);
+    }
+  };
   const handleUser = () => {
     showUser((prevShow) => !prevShow);
   };
   const handlePost = () => {
     const newPosts = [...localStorePost, posts];
+    const newImages = [...fileLocal, file];
     localStorage.setItem("posts", JSON.stringify(newPosts));
+    localStorage.setItem("files", JSON.stringify(newImages));
     setLocalStorePost(newPosts);
+    setFileLocal(newImages);
+    setImageShow(false);
     setPosts("");
   };
   const handleLike = (postId: any) => {
@@ -37,31 +49,14 @@ export default function Page() {
     }
   };
 
-  const handleComments = (postId: any) => {
-    const newComments = [...storeComments, comments];
-    newComments[postId] = newComments[postId] || [];
-    localStorage.setItem("comments", JSON.stringify(newComments));
-    setStoreComments(newComments);
-    setComments("");
-  };
-  const handleEComments = (e: any, post: any) => {
-    if (e.key === "Enter") {
-      handleComments(post);
-      console.log(comments);
-    }
-  };
-  const handleShowC = () => {
-    setShowComments((prevShow: any) => !prevShow);
-  };
-
   useEffect(() => {
     const storePosts = localStorage.getItem("posts");
     const storeLikes = localStorage.getItem("likes");
-    const StoreComments = localStorage.getItem("comments");
-    if (storePosts && storeLikes && StoreComments) {
+    const storeFile = localStorage.getItem("files");
+    if (storePosts && storeLikes && storeFile) {
       setLocalStorePost(JSON.parse(storePosts));
       setLikes(JSON.parse(storeLikes));
-      setStoreComments(JSON.parse(StoreComments));
+      setFileLocal(JSON.parse(storeFile));
     }
   }, []);
   // function clearLocalStorage() {
@@ -118,16 +113,34 @@ export default function Page() {
           onChange={(e) => setPosts(e.target.value)}
           className="border p-1 border-black w-96 h-10  outline-none rounded-sm"
         />
+        <button className="">
+          <input
+            type="file"
+            onChange={handleFile}
+            name="upload"
+            multiple
+            accept="image/*,.pdf"
+          />
+          <i className="fa-solid fa-plus px-4 cursor-pointer "></i>
+        </button>
         <button
           onClick={handlePost}
           className="ml-2 px-2 py-2 bg-blue-200 rounded-md "
         >
           Post
         </button>
+        {imageShow && (
+          <img
+            src={file}
+            alt=""
+            className=" w-[800px] text-center pl-52 pt-10"
+          />
+        )}
       </div>
       {/* your posts  */}
       <div className="posts px-20 py-20">
         <p className="pb-2">Posts all </p>
+
         <h5 className=" w-auto px-2 py-2">
           {/* post  */}
           {localStorePost &&
@@ -137,6 +150,14 @@ export default function Page() {
                 className="mb-5  bg-blue-200 px-2 h-auto pb-5 hover:bg-blue-200"
               >
                 {post}
+
+                {fileLocal[index] && (
+                  <img
+                    src={fileLocal[index]}
+                    alt="Post"
+                    className="max-w-full"
+                  />
+                )}
                 {/* like */}
                 <p
                   className="mt-5 w-full cursor-pointer"
@@ -144,25 +165,8 @@ export default function Page() {
                 >
                   Likes: {like[post] || 0}
                 </p>
-                <button onClick={handleShowC}> Show all comments</button>
-                {showComments && (
-                  <h2>
-                    {/* show comments  */}
-                    {storeComments &&
-                      storeComments.map((comment: any, index: any) => (
-                        <p key={index}>{comment}</p>
-                      ))}
-                  </h2>
-                )}
 
-                <br />
-                <input
-                  type="text"
-                  onKeyDown={(e) => handleEComments(e, post)}
-                  value={comments}
-                  onChange={(e) => setComments(e.target.value)}
-                  className="outline-none w-32 h-8  px-1 py-1"
-                />
+                {/* image */}
               </h4>
             ))}
         </h5>
